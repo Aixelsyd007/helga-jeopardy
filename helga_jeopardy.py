@@ -25,7 +25,7 @@ CHANNEL_ANNOUNCEMENT = getattr(settings, 'JEOPARDY_JOIN_MESSAGE', '')
 
 URL_RE = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
-api_endpoint = 'http://www.trivialbuzz.com/api/v1/'
+api_endpoint = 'http://jservice.io/api/'
 
 correct_responses = [
     'look at the big brains on {}',
@@ -168,14 +168,14 @@ def retrieve_question(client, channel):
     logger.debug('initiating question retrieval')
 
     try:
-        tb_resp = requests.get('{}questions/random.json'.format(api_endpoint))
+        tb_resp = requests.get('{}random.json'.format(api_endpoint))
     except RequestException:
-        return "Could not retrieve a question from the TrivialBuzz API"
+        return "Could not retrieve a question from the jservice API"
 
-    json_resp = tb_resp.json()['question']
-    question_text = json_resp['body'][1:-1]
-    answer = json_resp['response']
-    category = json_resp['category']['name']
+    json_resp = tb_resp.json()[0]
+    question_text = json_resp['question']
+    answer = json_resp['answer']
+    category = json_resp['category']['title']
     value = json_resp['value']
 
     if DEBUG:

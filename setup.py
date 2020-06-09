@@ -19,7 +19,7 @@ setup(name="helga-jeopardy",
       packages=find_packages(),
       install_requires = (
           'requests>=2.0.0',
-          'nltk',
+          'nltk==3.4.5',
       ),
       include_package_data=True,
       py_modules=['helga_jeopardy'],
