@@ -267,7 +267,189 @@ def scores(client, channel, nick, alltime=False):
 
         rank += 1
 
+def setup_new_game(client, channel, nick, message, cmd, args):
 
+    cats_resp = requests.get('{}categories?count=6'.format(api_endpoint))
+    y=0
+    for x in ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"]:
+        cat_dict[x] = requests.get('{}category?id={}'.format(api_endpoint,cats_resp.json()[y]["id"]))
+        y += 1
+
+    c1q1question = cat_dict["cat1"].json()["clues"][0]["question"]
+    c1q1answer = cat_dict["cat1"].json()["clues"][0]["answer"]
+    c1q1id = cat_dict["cat1"].json()["clues"][0]["id"]
+    c1q1value = cat_dict["cat1"].json()["clues"][0]["value"]
+
+    c1q2question = cat_dict["cat1"].json()["clues"][1]["question"]
+    c1q2answer = cat_dict["cat1"].json()["clues"][1]["answer"]
+    c1q2id = cat_dict["cat1"].json()["clues"][1]["id"]
+    c1q2value = cat_dict["cat1"].json()["clues"][1]["value"]
+
+    c1q2question = cat_dict["cat1"].json()["clues"][2]["question"]
+    c1q2answer = cat_dict["cat1"].json()["clues"][2]["answer"]
+    c1q2id = cat_dict["cat1"].json()["clues"][2]["id"]
+    c1q2value = cat_dict["cat1"].json()["clues"][2]["value"]
+
+    c1q3question = cat_dict["cat1"].json()["clues"][3]["question"]
+    c1q3answer = cat_dict["cat1"].json()["clues"][3]["answer"]
+    c1q3id = cat_dict["cat1"].json()["clues"][3]["id"]
+    c1q3value = cat_dict["cat1"].json()["clues"][3]["value"]
+
+    c1q4question = cat_dict["cat1"].json()["clues"][4]["question"]
+    c1q4answer = cat_dict["cat1"].json()["clues"][4]["answer"]
+    c1q4id = cat_dict["cat1"].json()["clues"][4]["id"]
+    c1q4value = cat_dict["cat1"].json()["clues"][4]["value"]
+
+
+    c2q1question = cat_dict["cat2"].json()["clues"][0]["question"]
+    c2q1answer = cat_dict["cat2"].json()["clues"][0]["answer"]
+    c2q1id = cat_dict["cat2"].json()["clues"][0]["id"]
+    c2q1value = cat_dict["cat2"].json()["clues"][0]["value"]
+
+    c2q2question = cat_dict["cat2"].json()["clues"][1]["question"]
+    c2q2answer = cat_dict["cat2"].json()["clues"][1]["answer"]
+    c2q2id = cat_dict["cat2"].json()["clues"][1]["id"]
+    c2q2value = cat_dict["cat2"].json()["clues"][1]["value"]
+
+    c2q3question = cat_dict["cat2"].json()["clues"][2]["question"]
+    c2q3answer = cat_dict["cat2"].json()["clues"][2]["answer"]
+    c2q3id = cat_dict["cat2"].json()["clues"][2]["id"]
+    c2q3value = cat_dict["cat2"].json()["clues"][2]["value"]
+
+    c2q4question = cat_dict["cat2"].json()["clues"][3]["question"]
+    c2q4answer = cat_dict["cat2"].json()["clues"][3]["answer"]
+    c2q4id = cat_dict["cat2"].json()["clues"][3]["id"]
+    c2q4value = cat_dict["cat2"].json()["clues"][3]["value"]
+
+    c2q5question = cat_dict["cat2"].json()["clues"][4]["question"]
+    c2q5answer = cat_dict["cat2"].json()["clues"][4]["answer"]
+    c2q5id = cat_dict["cat2"].json()["clues"][4]["id"]
+    c2q5value = cat_dict["cat2"].json()["clues"][4]["value"]
+
+
+    c3q1question = cat_dict["cat3"].json()["clues"][0]["question"]
+    c3q1answer = cat_dict["cat3"].json()["clues"][0]["answer"]
+    c3q1id = cat_dict["cat3"].json()["clues"][0]["id"]
+    c3q1value = cat_dict["cat3"].json()["clues"][0]["value"]
+
+    c3q2question = cat_dict["cat3"].json()["clues"][1]["question"]
+    c3q2answer = cat_dict["cat3"].json()["clues"][1]["answer"]
+    c3q2id = cat_dict["cat3"].json()["clues"][1]["id"]
+    c3q2value = cat_dict["cat3"].json()["clues"][1]["value"]
+
+    c3q3question = cat_dict["cat3"].json()["clues"][2]["question"]
+    c3q3answer = cat_dict["cat3"].json()["clues"][2]["answer"]
+    c3q3id = cat_dict["cat3"].json()["clues"][2]["id"]
+    c3q3value = cat_dict["cat3"].json()["clues"][2]["value"]
+
+    c3q4question = cat_dict["cat3"].json()["clues"][3]["question"]
+    c3q4answer = cat_dict["cat3"].json()["clues"][3]["answer"]
+    c3q4id = cat_dict["cat3"].json()["clues"][3]["id"]
+    c3q4value = cat_dict["cat3"].json()["clues"][3]["value"]
+
+    c3q5question = cat_dict["cat3"].json()["clues"][4]["question"]
+    c3q5answer = cat_dict["cat3"].json()["clues"][4]["answer"]
+    c3q5id = cat_dict["cat3"].json()["clues"][4]["id"]
+    c3q5value = cat_dict["cat3"].json()["clues"][4]["value"]
+
+
+    c4q1question = cat_dict["cat4"].json()["clues"][0]["question"]
+    c4q1answer = cat_dict["cat4"].json()["clues"][0]["answer"]
+    c4q1id = cat_dict["cat4"].json()["clues"][0]["id"]
+    c4q1value = cat_dict["cat4"].json()["clues"][0]["value"]
+
+    c4q2question = cat_dict["cat4"].json()["clues"][1]["question"]
+    c4q2answer = cat_dict["cat4"].json()["clues"][1]["answer"]
+    c4q2id = cat_dict["cat4"].json()["clues"][1]["id"]
+    c4q2value = cat_dict["cat4"].json()["clues"][1]["value"]
+
+    c4q3question = cat_dict["cat4"].json()["clues"][2]["question"]
+    c4q3answer = cat_dict["cat4"].json()["clues"][2]["answer"]
+    c4q3id = cat_dict["cat4"].json()["clues"][2]["id"]
+    c4q3value = cat_dict["cat4"].json()["clues"][2]["value"]
+
+    c4q4question = cat_dict["cat4"].json()["clues"][3]["question"]
+    c4q4answer = cat_dict["cat4"].json()["clues"][3]["answer"]
+    c4q4id = cat_dict["cat4"].json()["clues"][3]["id"]
+    c4q4value = cat_dict["cat4"].json()["clues"][3]["value"]
+
+    c4q5question = cat_dict["cat4"].json()["clues"][4]["question"]
+    c4q5answer = cat_dict["cat4"].json()["clues"][4]["answer"]
+    c4q5id = cat_dict["cat4"].json()["clues"][4]["id"]
+    c4q5value = cat_dict["cat4"].json()["clues"][4]["value"]
+
+
+    c5q1question = cat_dict["cat5"].json()["clues"][0]["question"]
+    c5q1answer = cat_dict["cat5"].json()["clues"][0]["answer"]
+    c5q1id = cat_dict["cat5"].json()["clues"][0]["id"]
+    c5q1value = cat_dict["cat5"].json()["clues"][0]["value"]
+
+    c5q2question = cat_dict["cat5"].json()["clues"][1]["question"]
+    c5q2answer = cat_dict["cat5"].json()["clues"][1]["answer"]
+    c5q2id = cat_dict["cat5"].json()["clues"][1]["id"]
+    c5q2value = cat_dict["cat5"].json()["clues"][1]["value"]
+
+    c5q3question = cat_dict["cat5"].json()["clues"][2]["question"]
+    c5q3answer = cat_dict["cat5"].json()["clues"][2]["answer"]
+    c5q3id = cat_dict["cat5"].json()["clues"][2]["id"]
+    c5q3value = cat_dict["cat5"].json()["clues"][2]["value"]
+
+    c5q4question = cat_dict["cat5"].json()["clues"][3]["question"]
+    c5q4answer = cat_dict["cat5"].json()["clues"][3]["answer"]
+    c5q4id = cat_dict["cat5"].json()["clues"][3]["id"]
+    c5q4value = cat_dict["cat5"].json()["clues"][3]["value"]
+
+    c5q5question = cat_dict["cat5"].json()["clues"][4]["question"]
+    c5q5answer = cat_dict["cat5"].json()["clues"][4]["answer"]
+    c5q5id = cat_dict["cat5"].json()["clues"][4]["id"]
+    c5q5value = cat_dict["cat5"].json()["clues"][4]["value"]
+
+
+    c6q1question = cat_dict["cat6"].json()["clues"][0]["question"]
+    c6q1answer = cat_dict["cat6"].json()["clues"][0]["answer"]
+    c6q1id = cat_dict["cat6"].json()["clues"][0]["id"]
+    c6q1value = cat_dict["cat6"].json()["clues"][0]["value"]
+
+    c6q2question = cat_dict["cat6"].json()["clues"][1]["question"]
+    c6q2answer = cat_dict["cat6"].json()["clues"][1]["answer"]
+    c6q2id = cat_dict["cat6"].json()["clues"][1]["id"]
+    c6q2value = cat_dict["cat6"].json()["clues"][1]["value"]
+
+    c6q3question = cat_dict["cat6"].json()["clues"][2]["question"]
+    c6q3answer = cat_dict["cat6"].json()["clues"][2]["answer"]
+    c6q3id = cat_dict["cat6"].json()["clues"][2]["id"]
+    c6q3value = cat_dict["cat6"].json()["clues"][2]["value"]
+
+    c6q4question = cat_dict["cat6"].json()["clues"][3]["question"]
+    c6q4answer = cat_dict["cat6"].json()["clues"][3]["answer"]
+    c6q4id = cat_dict["cat6"].json()["clues"][3]["id"]
+    c6q4value = cat_dict["cat6"].json()["clues"][3]["value"]
+
+    c6q5question = cat_dict["cat6"].json()["clues"][4]["question"]
+    c6q5answer = cat_dict["cat6"].json()["clues"][4]["answer"]
+    c6q5id = cat_dict["cat6"].json()["clues"][4]["id"]
+    c6q5value = cat_dict["cat6"].json()["clues"][4]["value"]
+
+    game_id = db.jeopardy.insert({
+        'cat1': {'clue1': {'question': c1q1question, 'answer': c1q1answer, 'value': c1q1value, 'id': c1q1id}, 'clue2': {'question': c1q2question, 'answer': c1q2answer, 'value': c1q2value, 'id': c1q2id}, 'clue3': {'question': c1q3question, 'answer': c1q3answer, 'value': c1q3value, 'id': c1q3id}, 'clue4': {'question': c1q4question, 'answer': c1q4answer, 'value': c1q4value, 'id': c1q4id}, 'clue5': {'question': c1q5question, 'answer': c1q5answer, 'value': c1q5value, 'id': c1q5id}},
+        'cat2': {'clue1': {'question': c2q1question, 'answer': c2q1answer, 'value': c2q1value, 'id': c2q1id}, 'clue2': {'question': c2q2question, 'answer': c2q2answer, 'value': c2q2value, 'id': c2q2id}, 'clue3': {'question': c2q3question, 'answer': c2q3answer, 'value': c2q3value, 'id': c2q3id}, 'clue4': {'question': c2q4question, 'answer': c2q4answer, 'value': c2q4value, 'id': c2q4id}, 'clue5': {'question': c2q5question, 'answer': c2q5answer, 'value': c2q5value, 'id': c2q5id}},
+        'cat3': {'clue1': {'question': c3q1question, 'answer': c3q1answer, 'value': c3q1value, 'id': c3q1id}, 'clue2': {'question': c3q2question, 'answer': c3q2answer, 'value': c3q2value, 'id': c3q2id}, 'clue3': {'question': c3q3question, 'answer': c3q3answer, 'value': c3q3value, 'id': c3q3id}, 'clue4': {'question': c3q4question, 'answer': c3q4answer, 'value': c3q4value, 'id': c3q4id}, 'clue5': {'question': c3q5question, 'answer': c3q5answer, 'value': c3q5value, 'id': c3q5id}},
+        'cat4': {'clue1': {'question': c4q1question, 'answer': c4q1answer, 'value': c4q1value, 'id': c4q1id}, 'clue2': {'question': c4q2question, 'answer': c4q2answer, 'value': c4q2value, 'id': c4q2id}, 'clue3': {'question': c4q3question, 'answer': c4q3answer, 'value': c4q3value, 'id': c4q3id}, 'clue4': {'question': c4q4question, 'answer': c4q4answer, 'value': c4q4value, 'id': c4q4id}, 'clue5': {'question': c4q5question, 'answer': c4q5answer, 'value': c4q5value, 'id': c4q5id}},
+        'cat5': {'clue1': {'question': c5q1question, 'answer': c5q1answer, 'value': c5q1value, 'id': c5q1id}, 'clue2': {'question': c5q2question, 'answer': c5q2answer, 'value': c5q2value, 'id': c5q2id}, 'clue3': {'question': c5q3question, 'answer': c5q3answer, 'value': c5q3value, 'id': c5q3id}, 'clue4': {'question': c5q4question, 'answer': c5q4answer, 'value': c5q4value, 'id': c5q4id}, 'clue5': {'question': c5q5question, 'answer': c5q5answer, 'value': c5q5value, 'id': c5q5id}},
+        'cat6': {'clue1': {'question': c6q1question, 'answer': c6q1answer, 'value': c6q1value, 'id': c6q1id}, 'clue2': {'question': c6q2question, 'answer': c6q2answer, 'value': c6q2value, 'id': c6q2id}, 'clue3': {'question': c6q3question, 'answer': c6q3answer, 'value': c6q3value, 'id': c6q3id}, 'clue4': {'question': c6q4question, 'answer': c6q4answer, 'value': c6q4value, 'id': c6q4id}, 'clue5': {'question': c6q5question, 'answer': c6q5answer, 'value': c6q5value, 'id': c6q5id}},
+        'channel': channel,
+        'game_active': True,
+        'game_started': False,
+        'game_host': nick,
+    })
+    current_game = mongo_db.find_one({
+        'channel': channel,
+        'game_active': True,
+    })
+    
+    client.msg(channel, current_game)
+    print current_game
+    
 @command('j', help='usage: ,j [<response>|score]')
 def jeopardy(client, channel, nick, message, cmd, args,
              quest_func=retrieve_question, mongo_db=db.jeopardy):
@@ -297,6 +479,11 @@ def jeopardy(client, channel, nick, message, cmd, args,
     if len(args) == 1 and args[0] == 'reset':
         reset_channel(channel, mongo_db)
         return 'done'
+
+    if len(args) > 0 and args[0] == 'game':
+        if args[1] == 'new':
+            setup_new_game(client, channel, nick, message, cmd, args)
+
 
     # if we have an active question, and args, evaluate the answer
 
