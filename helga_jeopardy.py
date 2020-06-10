@@ -47,6 +47,14 @@ def reset_channel(channel, mongo_db=db.jeopardy):
         'active': False
     }})
 
+    mongo_db.update_many({
+        'channel': channel,
+        'game_active': True
+    }, {'$set': {
+        'game_active': False,
+        'game_started': False
+    }})    
+
 remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
 
 def process_token(token):
@@ -509,6 +517,9 @@ def jeopardy(client, channel, nick, message, cmd, args,
     if args[0] == 'game' and args[1] == 'join':
         current_players = []
         current_players.append(new_game["players"])
+        if nick in current_players:
+            client.msg(channel, "You've already joined, {}".format(nick))
+            return
         current_players.append(nick)
         mongo_db.update({
             'game_active': True,
