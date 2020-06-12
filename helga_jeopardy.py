@@ -34,6 +34,12 @@ correct_responses = [
     '{} takes it, and has control of the board.',
 ]
 
+game_correct_responses = [
+    'Well done, {}. Now select another clue from our remaining categories',
+    '{}, correct! You are in control of the board',
+    '{} takes it, and has control of the board.',
+]
+
 def reset_channel(channel, mongo_db=db.jeopardy):
     """
     For channel name, make sure no question is active.
@@ -165,7 +171,7 @@ def reveal_answer(client, channel, question_id, answer, mongo_db=db.jeopardy):
         }
     })
 
-def retrieve_question(client, channel, current_game=None, category=None, value=None, random=True):
+def retrieve_question(client, channel, current_game=None, sel_category=None, sel_value=None, random=True):
     """
     Return the question and correct answer.
 
@@ -174,7 +180,7 @@ def retrieve_question(client, channel, current_game=None, category=None, value=N
 
     """
 
-    if random == True:
+    if random is True:
         logger.debug('initiating question retrieval')
     
         try:
@@ -209,15 +215,19 @@ def retrieve_question(client, channel, current_game=None, category=None, value=N
 
     else:
         logger.debug('initiating question retrieval')
-
         for key, value in current_game.items():
-            if key == category:
-                question_text = [str(value['clue{}'.format(i)]['question']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == value]
-                answer = [str(value['clue{}'.format(i)]['answer']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == value]
-                
-        
-        category = current_game[category]['category']
+            if key == sel_category:
+                question = [str(value['clue{}'.format(i)]['question']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
+                answer_raw = [str(value['clue{}'.format(i)]['answer']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
+                q_active = [str(value['clue{}'.format(i)]['active']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
+                clue = ['clue{}'.format(i) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == (sel_value)]
+        category = current_game[sel_category]['category']
+        if q_active is False:
+            client.msg(channel, "Clue has already been played. Choose another clue")
+            return
 
+        question_text = str(question).strip('[]\'')
+        answer = str(answer_raw).strip('[]\'')
         if DEBUG:
             logger.debug(u'psst! the answer is: {}'.format(answer))
 
@@ -225,11 +235,13 @@ def retrieve_question(client, channel, current_game=None, category=None, value=N
             'question': question_text,
             'answer': answer,
             'channel': channel,
-            'value': value,
+            'value': sel_value,
+            'category': sel_category,
+            'clue_idx': clue,
             'active': True,
         })
 
-        question = u'[{}] For ${}: {}'.format(category, value, question_text)
+        question = u'[{}] For ${}: {}'.format(category, sel_value, question_text)
 
         logger.debug(u'will reveal answer in {} seconds'.format(GAME_ANSWER_DELAY))
 
@@ -338,6 +350,8 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
             }
             game[category_name][clue_name] = game_question
     game_id = db.jeopardy.insert(game)
+
+    client.msg(channel, "New game created. to join: !j game join")
 #
 #    c1title = cat_dict["cat1"].json()['title']
 #    c1q1question = cat_dict["cat1"].json()["clues"][0]["question"]
@@ -556,14 +570,15 @@ def show_board(client, channel, mongo_db=db.jeopardy):
 
     for key, value in current_game.items():
         if key.startswith('cat'):
+            print value
             values = [str(value['clue{}'.format(i)]['value']) for i in range(1, 6) if value['clue{}'.format(i)]['active']]
             cat_names = value["category"]
             score_response =' '.join([key,  cat_names, ' '.join(values)])
             client.msg(channel, score_response)
 
-def evaluate_control(client, channel, nick, current_game, category, value, quest_func=retrieve_question):
+def evaluate_control(client, channel, nick, current_game, sel_category, sel_value, quest_func=retrieve_question):
     if current_game["control"] == nick:
-        result = quest_func(client, channel, current_game, category, value, random=False)
+        result = quest_func(client, channel, current_game, sel_category, sel_value, random=False)
         return result
     else:
         client.msg(channel, "You do not have control of the board")
@@ -600,6 +615,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
 
     if len(args) > 0 and args[0] == 'game':
         if args[1] == 'new':
+            client.msg(channel, "Fetching questions and categories from the API. This will take ~10s")
             setup_new_game(client, channel, nick, message, cmd, args)
             return
 
@@ -683,18 +699,56 @@ def jeopardy(client, channel, nick, message, cmd, args,
 
             logger.debug('answer is correct!')
 
-            mongo_db.update({
-                'active': True,
-                'channel': channel,
-            }, {
-                '$set': {
-                    'active': False,
-                    'answered_by': nick,
-                    'timestamp': datetime.datetime.utcnow(),
-                }
-            })
+            if current_game:
+                sel_category = str(question['category']).strip('[]\'')
+                clue_idx = str(question['clue_idx']).strip('[]\'')
+                print question
+                print clue_idx
+                mongo_db.update({
+                    'active': True,
+                    'channel': channel,
+                }, {
+                    '$set': {
+                        'active': False,
+                    }
+                })
 
-            return random.choice(correct_responses).format(nick)
+                clue_active = sel_category + '.' + clue_idx + '.active'
+                mongo_db.update({
+                    'game_active': True,
+                    'channel': channel,
+                }, {
+                    '$set': {
+                        'control': nick,
+                        clue_active: False,
+                    }
+                })
+#                mongo_db.update({
+#                    'game_active': True,
+#                    'channel': channel,
+#                }, {
+#                    '$set': {
+#                        'control': nick,
+#                        sel_category: {clue_idx: {'active': False}}
+#                    }
+#                })
+
+                show_board(client, channel)
+                return random.choice(game_correct_responses).format(nick)
+
+            else:
+                mongo_db.update({
+                    'active': True,
+                    'channel': channel,
+                }, {
+                    '$set': {
+                        'active': False,
+                        'answered_by': nick,
+                        'timestamp': datetime.datetime.utcnow(),
+                    }
+                })
+
+                return random.choice(correct_responses).format(nick)
 
         if partial > 0:
             return u"{}, can you be more specific?".format(nick)
@@ -706,19 +760,20 @@ def jeopardy(client, channel, nick, message, cmd, args,
         logger.debug('no answer provided :/')
         return
 
-#    if not question and args:
-#        logger.debug('no active question :/')
-#        return
+    if not question and args:
+        if args[0] != "game" and not args[0].startswith('cat'):
+            logger.debug('no active question :/')
+            return
 
     if len(args) == 2 and args[0].startswith('cat'):
-        if new_game:
+        if not current_game:
             client.msg(channel, "Game not started. to join: !j game join to start: !j game start")
             return
 
-        category = args[0]
-        value = args[1]
+        sel_category = args[0]
+        sel_value = int(args[1])
         if current_game:
-            question_text = evaluate_control(client, channel, nick, current_game, category, value)
+            question_text = evaluate_control(client, channel, nick, current_game, sel_category, sel_value)
 
     if not current_game:
         question_text = quest_func(client, channel)
