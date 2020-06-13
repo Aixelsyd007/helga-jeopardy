@@ -140,7 +140,7 @@ def eval_potential_answer(input_line, answer):
 
     return correct, partial, ratio
 
-def reveal_answer(client, channel, question_id, answer, mongo_db=db.jeopardy):
+def reveal_answer(client, channel, question_id, answer, random=True, mongo_db=db.jeopardy):
     """
     This is the timer, essentially. When this point is reached, no more
     answers will be accepted, and our gracious host will reveal the
@@ -161,15 +161,37 @@ def reveal_answer(client, channel, question_id, answer, mongo_db=db.jeopardy):
         logger.debug('not active question, someone must have answered it! Good Show!')
         return
 
-    client.msg(channel, u'the correct answer is: {}'.format(answer))
+    if random is True:
+        client.msg(channel, u'the correct answer is: {}'.format(answer))
+        mongo_db.update({
+            '_id': question_id,
+        }, {
+            '$set': {
+                'active': False,
+            }
+        })
 
-    mongo_db.update({
-        '_id': question_id,
-    }, {
-        '$set': {
-            'active': False,
-        }
-    })
+    else:
+        client.msg(channel, u'the correct answer is: {}'.format(answer))
+        clue_active = question['category'] + '.' + question['clue_idx'] + '.active'
+        mongo_db.update({
+            'game_active': True,
+            'channel': channel,
+        }, {
+            '$set': {
+                clue_active: False,
+            }
+        })
+
+        mongo_db.update({
+            '_id': question_id,
+        }, {
+            '$set': {
+                'active': False,
+            }
+        })
+
+        show_board(client, channel)
 
 def retrieve_question(client, channel, current_game=None, sel_category=None, sel_value=None, random=True):
     """
@@ -215,12 +237,21 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
 
     else:
         logger.debug('initiating question retrieval')
+#        for key, value in current_game.items():
+#            if key == sel_category:
+#                question = [str(value['clue{}'.format(i)]['question']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
+#                answer_raw = [str(value['clue{}'.format(i)]['answer']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
+#                q_active = [str(value['clue{}'.format(i)]['active']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
+#                clue = ['clue{}'.format(i) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == (sel_value)]
         for key, value in current_game.items():
             if key == sel_category:
-                question = [str(value['clue{}'.format(i)]['question']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
-                answer_raw = [str(value['clue{}'.format(i)]['answer']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
-                q_active = [str(value['clue{}'.format(i)]['active']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
-                clue = ['clue{}'.format(i) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == (sel_value)]
+                for k, v in value.items():
+                    if k.startswith('clue') and v['value'] == sel_value:
+                        question = v['question']
+                        answer_raw = v['answer']
+                        q_active = v['active']
+                        clue = k
+
         category = current_game[sel_category]['category']
         if q_active is False:
             client.msg(channel, "Clue has already been played. Choose another clue")
@@ -245,7 +276,7 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
 
         logger.debug(u'will reveal answer in {} seconds'.format(GAME_ANSWER_DELAY))
 
-        reactor.callLater(GAME_ANSWER_DELAY, reveal_answer, client, channel, question_id, answer)
+        reactor.callLater(GAME_ANSWER_DELAY, reveal_answer, client, channel, question_id, answer, random=False)
 
         return question
 
@@ -576,13 +607,18 @@ def show_board(client, channel, mongo_db=db.jeopardy):
             score_response =' '.join([key,  cat_names, ' '.join(values)])
             client.msg(channel, score_response)
 
+    players = current_game['players']
+    client.msg(channel, "Here are the current scores:")
+    for i in players:
+        client.msg(channel, "{} : {}".format(i, current_game[i]))
 def evaluate_control(client, channel, nick, current_game, sel_category, sel_value, quest_func=retrieve_question):
     if current_game["control"] == nick:
         result = quest_func(client, channel, current_game, sel_category, sel_value, random=False)
         return result
     else:
         client.msg(channel, "You do not have control of the board")
-    
+        return
+ 
 @command('j', help='usage: ,j [<response>|score]')
 def jeopardy(client, channel, nick, message, cmd, args,
              quest_func=retrieve_question, mongo_db=db.jeopardy):
@@ -713,6 +749,9 @@ def jeopardy(client, channel, nick, message, cmd, args,
                     }
                 })
 
+                score = current_game[nick] 
+                new_score = score + question['value']
+
                 clue_active = sel_category + '.' + clue_idx + '.active'
                 mongo_db.update({
                     'game_active': True,
@@ -721,19 +760,11 @@ def jeopardy(client, channel, nick, message, cmd, args,
                     '$set': {
                         'control': nick,
                         clue_active: False,
+                        nick: new_score,
                     }
                 })
-#                mongo_db.update({
-#                    'game_active': True,
-#                    'channel': channel,
-#                }, {
-#                    '$set': {
-#                        'control': nick,
-#                        sel_category: {clue_idx: {'active': False}}
-#                    }
-#                })
 
-                show_board(client, channel)
+                reactor.callLater(1, show_board, client, channel)
                 return random.choice(game_correct_responses).format(nick)
 
             else:
@@ -753,7 +784,22 @@ def jeopardy(client, channel, nick, message, cmd, args,
         if partial > 0:
             return u"{}, can you be more specific?".format(nick)
 
-        # wrong answer, ignore
+        # wrong answer, ignore for random q, but deduct if game
+
+        else:
+            if current_game:
+                score = current_game[nick]
+                new_score = score - question['value']
+                mongo_db.update({
+                    'game_active': True,
+                    'channel': channel,
+                }, {
+                    '$set': {
+                        nick: new_score,
+                    }
+                })
+                return
+            
         return
 
     if question and not args:
