@@ -34,10 +34,20 @@ correct_responses = [
     '{} takes it, and has control of the board.',
 ]
 
-game_correct_responses = [
-    'Well done, {}. Now select another clue from our remaining categories',
-    '{}, correct! You are in control of the board',
-    '{} takes it, and has control of the board.',
+game_correct_responses_maintain = [
+    'Well done, {}. Now select another clue from our remaining categories.',
+    '{}, correct! You are still in control of the board.',
+    '{} takes it, and maintains control of the board.',
+    'That\'s right, {}. You still have control, pick again.',
+    '{}, Yes. Select again',
+]
+
+game_correct_responses_take = [
+    'Well done, {}. You now have control of the board.',
+    '{}, correct! You have taken control of the board.',
+    '{} takes it, and takes control of the board.',
+    'That\'s it! {} now has constrol of the board.',
+    'You got it! You\'ve gained contorl of the board, {}.',
 ]
 
 def reset_channel(channel, mongo_db=db.jeopardy):
@@ -190,6 +200,8 @@ def reveal_answer(client, channel, question_id, answer, random=True, mongo_db=db
                 'active': False,
             }
         })
+        if check_remaining_clues(client, channel) is False:
+            return
 
         show_board(client, channel)
 
@@ -237,12 +249,6 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
 
     else:
         logger.debug('initiating question retrieval')
-#        for key, value in current_game.items():
-#            if key == sel_category:
-#                question = [str(value['clue{}'.format(i)]['question']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
-#                answer_raw = [str(value['clue{}'.format(i)]['answer']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
-#                q_active = [str(value['clue{}'.format(i)]['active']) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == sel_value]
-#                clue = ['clue{}'.format(i) for i in range(1, 6) if value['clue{}'.format(i)]['value'] == (sel_value)]
         for key, value in current_game.items():
             if key == sel_category:
                 for k, v in value.items():
@@ -351,8 +357,8 @@ def scores(client, channel, nick, alltime=False):
         rank += 1
 
 def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopardy):
-
-    cats_resp = requests.get('{}categories?count=6'.format(api_endpoint))
+    random_cat = random.randint(1,18412)
+    cats_resp = requests.get('{}categories?count=6&offset={}'.format(api_endpoint, random_cat))
     y=0
     cat_dict={}
     for x in ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"]:
@@ -382,182 +388,20 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
             game[category_name][clue_name] = game_question
     game_id = db.jeopardy.insert(game)
 
+    new_game = mongo_db.find_one({
+        'channel': channel,
+        'game_active': True,
+        'game_started': False,
+    })
+
+    for key, value in new_game.items():
+        if key.startswith('cat'):
+            for k, v in value.items():
+                if k.startswith('clue'):
+                    if v['active'] is None:
+                        v['active'] = False
     client.msg(channel, "New game created. to join: !j game join")
-#
-#    c1title = cat_dict["cat1"].json()['title']
-#    c1q1question = cat_dict["cat1"].json()["clues"][0]["question"]
-#    c1q1answer = cat_dict["cat1"].json()["clues"][0]["answer"]
-#    c1q1id = cat_dict["cat1"].json()["clues"][0]["id"]
-#    c1q1value = cat_dict["cat1"].json()["clues"][0]["value"]
-#
-#    c1q2question = cat_dict["cat1"].json()["clues"][1]["question"]
-#    c1q2answer = cat_dict["cat1"].json()["clues"][1]["answer"]
-#    c1q2id = cat_dict["cat1"].json()["clues"][1]["id"]
-#    c1q2value = cat_dict["cat1"].json()["clues"][1]["value"]
-#
-#    c1q3question = cat_dict["cat1"].json()["clues"][2]["question"]
-#    c1q3answer = cat_dict["cat1"].json()["clues"][2]["answer"]
-#    c1q3id = cat_dict["cat1"].json()["clues"][2]["id"]
-#    c1q3value = cat_dict["cat1"].json()["clues"][2]["value"]
-#
-#    c1q4question = cat_dict["cat1"].json()["clues"][3]["question"]
-#    c1q4answer = cat_dict["cat1"].json()["clues"][3]["answer"]
-#    c1q4id = cat_dict["cat1"].json()["clues"][3]["id"]
-#    c1q4value = cat_dict["cat1"].json()["clues"][3]["value"]
-#
-#    c1q5question = cat_dict["cat1"].json()["clues"][4]["question"]
-#    c1q5answer = cat_dict["cat1"].json()["clues"][4]["answer"]
-#    c1q5id = cat_dict["cat1"].json()["clues"][4]["id"]
-#    c1q5value = cat_dict["cat1"].json()["clues"][4]["value"]
-#
-#
-#    c2title = cat_dict["cat2"].json()['title']
-#    c2q1question = cat_dict["cat2"].json()["clues"][0]["question"]
-#    c2q1answer = cat_dict["cat2"].json()["clues"][0]["answer"]
-#    c2q1id = cat_dict["cat2"].json()["clues"][0]["id"]
-#    c2q1value = cat_dict["cat2"].json()["clues"][0]["value"]
-#
-#    c2q2question = cat_dict["cat2"].json()["clues"][1]["question"]
-#    c2q2answer = cat_dict["cat2"].json()["clues"][1]["answer"]
-#    c2q2id = cat_dict["cat2"].json()["clues"][1]["id"]
-#    c2q2value = cat_dict["cat2"].json()["clues"][1]["value"]
-#
-#    c2q3question = cat_dict["cat2"].json()["clues"][2]["question"]
-#    c2q3answer = cat_dict["cat2"].json()["clues"][2]["answer"]
-#    c2q3id = cat_dict["cat2"].json()["clues"][2]["id"]
-#    c2q3value = cat_dict["cat2"].json()["clues"][2]["value"]
-#
-#    c2q4question = cat_dict["cat2"].json()["clues"][3]["question"]
-#    c2q4answer = cat_dict["cat2"].json()["clues"][3]["answer"]
-#    c2q4id = cat_dict["cat2"].json()["clues"][3]["id"]
-#    c2q4value = cat_dict["cat2"].json()["clues"][3]["value"]
-#
-#    c2q5question = cat_dict["cat2"].json()["clues"][4]["question"]
-#    c2q5answer = cat_dict["cat2"].json()["clues"][4]["answer"]
-#    c2q5id = cat_dict["cat2"].json()["clues"][4]["id"]
-#    c2q5value = cat_dict["cat2"].json()["clues"][4]["value"]
-#
-#
-#    c3title = cat_dict["cat3"].json()['title']
-#    c3q1question = cat_dict["cat3"].json()["clues"][0]["question"]
-#    c3q1answer = cat_dict["cat3"].json()["clues"][0]["answer"]
-#    c3q1id = cat_dict["cat3"].json()["clues"][0]["id"]
-#    c3q1value = cat_dict["cat3"].json()["clues"][0]["value"]
-#
-#    c3q2question = cat_dict["cat3"].json()["clues"][1]["question"]
-#    c3q2answer = cat_dict["cat3"].json()["clues"][1]["answer"]
-#    c3q2id = cat_dict["cat3"].json()["clues"][1]["id"]
-#    c3q2value = cat_dict["cat3"].json()["clues"][1]["value"]
-#
-#    c3q3question = cat_dict["cat3"].json()["clues"][2]["question"]
-#    c3q3answer = cat_dict["cat3"].json()["clues"][2]["answer"]
-#    c3q3id = cat_dict["cat3"].json()["clues"][2]["id"]
-#    c3q3value = cat_dict["cat3"].json()["clues"][2]["value"]
-#
-#    c3q4question = cat_dict["cat3"].json()["clues"][3]["question"]
-#    c3q4answer = cat_dict["cat3"].json()["clues"][3]["answer"]
-#    c3q4id = cat_dict["cat3"].json()["clues"][3]["id"]
-#    c3q4value = cat_dict["cat3"].json()["clues"][3]["value"]
-#
-#    c3q5question = cat_dict["cat3"].json()["clues"][4]["question"]
-#    c3q5answer = cat_dict["cat3"].json()["clues"][4]["answer"]
-#    c3q5id = cat_dict["cat3"].json()["clues"][4]["id"]
-#    c3q5value = cat_dict["cat3"].json()["clues"][4]["value"]
-#
-#
-#    c4title = cat_dict["cat4"].json()['title']
-#    c4q1question = cat_dict["cat4"].json()["clues"][0]["question"]
-#    c4q1answer = cat_dict["cat4"].json()["clues"][0]["answer"]
-#    c4q1id = cat_dict["cat4"].json()["clues"][0]["id"]
-#    c4q1value = cat_dict["cat4"].json()["clues"][0]["value"]
-#
-#    c4q2question = cat_dict["cat4"].json()["clues"][1]["question"]
-#    c4q2answer = cat_dict["cat4"].json()["clues"][1]["answer"]
-#    c4q2id = cat_dict["cat4"].json()["clues"][1]["id"]
-#    c4q2value = cat_dict["cat4"].json()["clues"][1]["value"]
-#
-#    c4q3question = cat_dict["cat4"].json()["clues"][2]["question"]
-#    c4q3answer = cat_dict["cat4"].json()["clues"][2]["answer"]
-#    c4q3id = cat_dict["cat4"].json()["clues"][2]["id"]
-#    c4q3value = cat_dict["cat4"].json()["clues"][2]["value"]
-#
-#    c4q4question = cat_dict["cat4"].json()["clues"][3]["question"]
-#    c4q4answer = cat_dict["cat4"].json()["clues"][3]["answer"]
-#    c4q4id = cat_dict["cat4"].json()["clues"][3]["id"]
-#    c4q4value = cat_dict["cat4"].json()["clues"][3]["value"]
-#
-#    c4q5question = cat_dict["cat4"].json()["clues"][4]["question"]
-#    c4q5answer = cat_dict["cat4"].json()["clues"][4]["answer"]
-#    c4q5id = cat_dict["cat4"].json()["clues"][4]["id"]
-#    c4q5value = cat_dict["cat4"].json()["clues"][4]["value"]
-#
-#
-#    c5title = cat_dict["cat5"].json()['title']
-#    c5q1question = cat_dict["cat5"].json()["clues"][0]["question"]
-#    c5q1answer = cat_dict["cat5"].json()["clues"][0]["answer"]
-#    c5q1id = cat_dict["cat5"].json()["clues"][0]["id"]
-#    c5q1value = cat_dict["cat5"].json()["clues"][0]["value"]
-#
-#    c5q2question = cat_dict["cat5"].json()["clues"][1]["question"]
-#    c5q2answer = cat_dict["cat5"].json()["clues"][1]["answer"]
-#    c5q2id = cat_dict["cat5"].json()["clues"][1]["id"]
-#    c5q2value = cat_dict["cat5"].json()["clues"][1]["value"]
-#
-#    c5q3question = cat_dict["cat5"].json()["clues"][2]["question"]
-#    c5q3answer = cat_dict["cat5"].json()["clues"][2]["answer"]
-#    c5q3id = cat_dict["cat5"].json()["clues"][2]["id"]
-#    c5q3value = cat_dict["cat5"].json()["clues"][2]["value"]
-#
-#    c5q4question = cat_dict["cat5"].json()["clues"][3]["question"]
-#    c5q4answer = cat_dict["cat5"].json()["clues"][3]["answer"]
-#    c5q4id = cat_dict["cat5"].json()["clues"][3]["id"]
-#    c5q4value = cat_dict["cat5"].json()["clues"][3]["value"]
-#
-#    c5q5question = cat_dict["cat5"].json()["clues"][4]["question"]
-#    c5q5answer = cat_dict["cat5"].json()["clues"][4]["answer"]
-#    c5q5id = cat_dict["cat5"].json()["clues"][4]["id"]
-#    c5q5value = cat_dict["cat5"].json()["clues"][4]["value"]
-#
-#
-#    c6title = cat_dict["cat6"].json()['title']
-#    c6q1question = cat_dict["cat6"].json()["clues"][0]["question"]
-#    c6q1answer = cat_dict["cat6"].json()["clues"][0]["answer"]
-#    c6q1id = cat_dict["cat6"].json()["clues"][0]["id"]
-#    c6q1value = cat_dict["cat6"].json()["clues"][0]["value"]
-#
-#    c6q2question = cat_dict["cat6"].json()["clues"][1]["question"]
-#    c6q2answer = cat_dict["cat6"].json()["clues"][1]["answer"]
-#    c6q2id = cat_dict["cat6"].json()["clues"][1]["id"]
-#    c6q2value = cat_dict["cat6"].json()["clues"][1]["value"]
-#
-#    c6q3question = cat_dict["cat6"].json()["clues"][2]["question"]
-#    c6q3answer = cat_dict["cat6"].json()["clues"][2]["answer"]
-#    c6q3id = cat_dict["cat6"].json()["clues"][2]["id"]
-#    c6q3value = cat_dict["cat6"].json()["clues"][2]["value"]
-#
-#    c6q4question = cat_dict["cat6"].json()["clues"][3]["question"]
-#    c6q4answer = cat_dict["cat6"].json()["clues"][3]["answer"]
-#    c6q4id = cat_dict["cat6"].json()["clues"][3]["id"]
-#    c6q4value = cat_dict["cat6"].json()["clues"][3]["value"]
-#
-#    c6q5question = cat_dict["cat6"].json()["clues"][4]["question"]
-#    c6q5answer = cat_dict["cat6"].json()["clues"][4]["answer"]
-#    c6q5id = cat_dict["cat6"].json()["clues"][4]["id"]
-#    c6q5value = cat_dict["cat6"].json()["clues"][4]["value"]
-#
-#    game_id = db.jeopardy.insert({
-#        'cat1': {'clue1': {'question': c1q1question, 'answer': c1q1answer, 'value': c1q1value, 'id': c1q1id, 'active': True}, 'clue2': {'question': c1q2question, 'answer': c1q2answer, 'value': c1q2value, 'id': c1q2id, 'active': True}, 'clue3': {'question': c1q3question, 'answer': c1q3answer, 'value': c1q3value, 'id': c1q3id, 'active': True}, 'clue4': {'question': c1q4question, 'answer': c1q4answer, 'value': c1q4value, 'id': c1q4id, 'active': True}, 'clue5': {'question': c1q5question, 'answer': c1q5answer, 'value': c1q5value, 'id': c1q5id, 'active': True}, 'category': c1title },
-#        'cat2': {'clue1': {'question': c2q1question, 'answer': c2q1answer, 'value': c2q1value, 'id': c2q1id, 'active': True}, 'clue2': {'question': c2q2question, 'answer': c2q2answer, 'value': c2q2value, 'id': c2q2id, 'active': True}, 'clue3': {'question': c2q3question, 'answer': c2q3answer, 'value': c2q3value, 'id': c2q3id, 'active': True}, 'clue4': {'question': c2q4question, 'answer': c2q4answer, 'value': c2q4value, 'id': c2q4id, 'active': True}, 'clue5': {'question': c2q5question, 'answer': c2q5answer, 'value': c2q5value, 'id': c2q5id, 'active': True}, 'category': c2title },
-#        'cat3': {'clue1': {'question': c3q1question, 'answer': c3q1answer, 'value': c3q1value, 'id': c3q1id, 'active': True}, 'clue2': {'question': c3q2question, 'answer': c3q2answer, 'value': c3q2value, 'id': c3q2id, 'active': True}, 'clue3': {'question': c3q3question, 'answer': c3q3answer, 'value': c3q3value, 'id': c3q3id, 'active': True}, 'clue4': {'question': c3q4question, 'answer': c3q4answer, 'value': c3q4value, 'id': c3q4id, 'active': True}, 'clue5': {'question': c3q5question, 'answer': c3q5answer, 'value': c3q5value, 'id': c3q5id, 'active': True}, 'category': c3title },
-#        'cat4': {'clue1': {'question': c4q1question, 'answer': c4q1answer, 'value': c4q1value, 'id': c4q1id, 'active': True}, 'clue2': {'question': c4q2question, 'answer': c4q2answer, 'value': c4q2value, 'id': c4q2id, 'active': True}, 'clue3': {'question': c4q3question, 'answer': c4q3answer, 'value': c4q3value, 'id': c4q3id, 'active': True}, 'clue4': {'question': c4q4question, 'answer': c4q4answer, 'value': c4q4value, 'id': c4q4id, 'active': True}, 'clue5': {'question': c4q5question, 'answer': c4q5answer, 'value': c4q5value, 'id': c4q5id, 'active': True}, 'category': c4title },
-#        'cat5': {'clue1': {'question': c5q1question, 'answer': c5q1answer, 'value': c5q1value, 'id': c5q1id, 'active': True}, 'clue2': {'question': c5q2question, 'answer': c5q2answer, 'value': c5q2value, 'id': c5q2id, 'active': True}, 'clue3': {'question': c5q3question, 'answer': c5q3answer, 'value': c5q3value, 'id': c5q3id, 'active': True}, 'clue4': {'question': c5q4question, 'answer': c5q4answer, 'value': c5q4value, 'id': c5q4id, 'active': True}, 'clue5': {'question': c5q5question, 'answer': c5q5answer, 'value': c5q5value, 'id': c5q5id, 'active': True}, 'category': c5title },
-#        'cat6': {'clue1': {'question': c6q1question, 'answer': c6q1answer, 'value': c6q1value, 'id': c6q1id, 'active': True}, 'clue2': {'question': c6q2question, 'answer': c6q2answer, 'value': c6q2value, 'id': c6q2id, 'active': True}, 'clue3': {'question': c6q3question, 'answer': c6q3answer, 'value': c6q3value, 'id': c6q3id, 'active': True}, 'clue4': {'question': c6q4question, 'answer': c6q4answer, 'value': c6q4value, 'id': c6q4id, 'active': True}, 'clue5': {'question': c6q5question, 'answer': c6q5answer, 'value': c6q5value, 'id': c6q5id, 'active': True}, 'category': c6title },
-#        'channel': channel,
-#        'game_active': True,
-#        'game_started': False,
-#        'game_host': nick,
-#    })
-#
+
 def start_new_game(nick, new_game, client, channel, mongo_db=db.jeopardy):
     current_players = []
     for i in new_game["players"]:
@@ -591,6 +435,7 @@ def start_new_game(nick, new_game, client, channel, mongo_db=db.jeopardy):
             'control': control,
        }
     })
+    reactor.callLater(1800, end_game, client, channel)
     return
 
 def show_board(client, channel, mongo_db=db.jeopardy):
@@ -601,7 +446,6 @@ def show_board(client, channel, mongo_db=db.jeopardy):
 
     for key, value in current_game.items():
         if key.startswith('cat'):
-            print value
             values = [str(value['clue{}'.format(i)]['value']) for i in range(1, 6) if value['clue{}'.format(i)]['active']]
             cat_names = value["category"]
             score_response =' '.join([key,  cat_names, ' '.join(values)])
@@ -611,6 +455,7 @@ def show_board(client, channel, mongo_db=db.jeopardy):
     client.msg(channel, "Here are the current scores:")
     for i in players:
         client.msg(channel, "{} : {}".format(i, current_game[i]))
+
 def evaluate_control(client, channel, nick, current_game, sel_category, sel_value, quest_func=retrieve_question):
     if current_game["control"] == nick:
         result = quest_func(client, channel, current_game, sel_category, sel_value, random=False)
@@ -618,7 +463,62 @@ def evaluate_control(client, channel, nick, current_game, sel_category, sel_valu
     else:
         client.msg(channel, "You do not have control of the board")
         return
- 
+
+def check_remaining_clues(client, channel, mongo_db=db.jeopardy):
+    current_game = mongo_db.find_one({
+        'channel': channel,
+        'game_active': True,
+        'game_started': True,
+    })
+    question_count = 0
+    for key, value in current_game.items():
+        if key.startswith('cat'):
+            for k, v in value.items():
+                if k.startswith('clue'):
+                    for kee,val in v.items():
+                        if kee['active'] == True:
+                            question_count += 1
+
+    if question_count < 1:
+        client.msg(channel, "All questions have been answered. Ending game..")
+        end_game(client, channel, current_game)
+        return False
+    else:
+        return True
+
+def end_game(client, channel, current_game=None, mongo_db=db.jeopardy):
+    mongo_db.update({
+	'game_active': True,
+	'channel': channel,
+    }, {
+	'$set': {
+	    'game_active': False,
+	    'game_started': False
+	}
+    })
+    if current_game:
+        current_players = current_game['players']
+        client.msg(channel, "Here are the final scores:")
+        scores = []
+        for i in current_players:
+	    client.msg(channel, "{} : {}".format(i, current_game[i]))
+            scores.append(current_game[i])
+        
+        winners = []
+        for key, value in current_game.items():
+            if value == max(scores):
+                winners.append(key)
+    
+        if len(winners) == 1:
+            client.msg(channel, "{} is our new champion with a score of {}!".format(" ".join(winners), max(scores)))
+            return
+        else:
+            client.msg(channel, "We have a tie! Our winners today are: {}  each of them scored {}".format(" ".join(winners), max(scores)))
+            return
+    else:
+        client.msg(channel, "Game ended by host")
+        return
+
 @command('j', help='usage: ,j [<response>|score]')
 def jeopardy(client, channel, nick, message, cmd, args,
              quest_func=retrieve_question, mongo_db=db.jeopardy):
@@ -652,7 +552,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
     if len(args) > 0 and args[0] == 'game':
         if args[1] == 'new':
             client.msg(channel, "Fetching questions and categories from the API. This will take ~10s")
-            setup_new_game(client, channel, nick, message, cmd, args)
+            reactor.callLater(1,setup_new_game, client, channel, nick, message, cmd, args)
             return
 
     # if we have an active question, and args, evaluate the answer
@@ -673,6 +573,25 @@ def jeopardy(client, channel, nick, message, cmd, args,
         'game_active': True,
         'game_started': True,
     })   
+
+    if len(args) == 2 and args[0] == 'game' and args[1] == 'end':
+        if not new_game and not current_game:
+            client.msg(channel, "No active game, try: !j game new")
+            return
+        if current_game:
+            if nick == current_game['game_host']:
+                client.msg(channel, "Host is ending game...")
+                end_game(client, channel, current_game)
+                return
+            else:
+                client.msg(channel, "Only the game host, {}, can end the game. As a failsafe, this game will end 30 minutes after start.".format(current_game['game_host']))
+        if new_game:
+            if nick == new_game['game_host']:
+                end_game(client, channel)
+                return
+        else:
+                client.msg(channel, "Only the game host, {}, can end the game. As a failsafe, this game will end 30 minutes after start.".format(new_game['game_host']))
+        return
 
     if len(args) == 2 and args[0] == 'game' and args[1] == 'join':
         if not new_game:
@@ -723,7 +642,9 @@ def jeopardy(client, channel, nick, message, cmd, args,
         if new_game["players"]:
             start_new_game(nick, new_game, client, channel)
             return
-
+        else:
+            client.msg(channel, "You need at least 1 player to start the game. try: !j game join")
+            return
 
     if question and args:
 
@@ -736,10 +657,11 @@ def jeopardy(client, channel, nick, message, cmd, args,
             logger.debug('answer is correct!')
 
             if current_game:
+                if nick not in current_game['players']:
+                    client.msg(channel, "You did not join this game. Please wait for the next game to join")
+                    return
                 sel_category = str(question['category']).strip('[]\'')
                 clue_idx = str(question['clue_idx']).strip('[]\'')
-                print question
-                print clue_idx
                 mongo_db.update({
                     'active': True,
                     'channel': channel,
@@ -749,6 +671,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
                     }
                 })
 
+                last_control = current_game['control']
                 score = current_game[nick] 
                 new_score = score + question['value']
 
@@ -764,8 +687,17 @@ def jeopardy(client, channel, nick, message, cmd, args,
                     }
                 })
 
+                if check_remaining_clues(client, channel) is False:
+                    return
+
                 reactor.callLater(1, show_board, client, channel)
-                return random.choice(game_correct_responses).format(nick)
+
+                if last_control == nick:
+                    return random.choice(game_correct_responses_maintain).format(nick)
+
+                else:
+                    return random.choice(game_correct_responses_take).format(nick)
+
 
             else:
                 mongo_db.update({
@@ -788,6 +720,9 @@ def jeopardy(client, channel, nick, message, cmd, args,
 
         else:
             if current_game:
+                if nick not in current_game['players']:
+                    client.msg(channel, "You did not join this game. Please wait for the next game to join")
+                    return
                 score = current_game[nick]
                 new_score = score - question['value']
                 mongo_db.update({
@@ -813,8 +748,14 @@ def jeopardy(client, channel, nick, message, cmd, args,
 
     if len(args) == 2 and args[0].startswith('cat'):
         if not current_game:
-            client.msg(channel, "Game not started. to join: !j game join to start: !j game start")
+            client.msg(channel, "Game not started.  to join: !j game join   to start: !j game start")
             return
+
+        if nick not in current_game['players']:
+            client.msg(channel, "Game in progress. You must wait for the next game to join")
+            return
+
+            
 
         sel_category = args[0]
         sel_value = int(args[1])
