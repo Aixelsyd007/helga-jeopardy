@@ -386,21 +386,17 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
                 'active': True,
             }
             game[category_name][clue_name] = game_question
-    game_id = db.jeopardy.insert(game)
 
-    new_game = mongo_db.find_one({
-        'channel': channel,
-        'game_active': True,
-        'game_started': False,
-    })
-
-    for key, value in new_game.items():
+    for key, value in game.items():
         if key.startswith('cat'):
             for k, v in value.items():
                 if k.startswith('clue'):
-                    if v['active'] is None:
-                        v['active'] = False
+                    if v['value'] is None:
+                        v['value'] = 500
+
+    game_id = db.jeopardy.insert(game)
     client.msg(channel, "New game created. to join: !j game join")
+    return
 
 def start_new_game(nick, new_game, client, channel, mongo_db=db.jeopardy):
     current_players = []
@@ -475,9 +471,8 @@ def check_remaining_clues(client, channel, mongo_db=db.jeopardy):
         if key.startswith('cat'):
             for k, v in value.items():
                 if k.startswith('clue'):
-                    for kee,val in v.items():
-                        if kee['active'] == True:
-                            question_count += 1
+                    if v['active'] == True:
+                        question_count += 1
 
     if question_count < 1:
         client.msg(channel, "All questions have been answered. Ending game..")
