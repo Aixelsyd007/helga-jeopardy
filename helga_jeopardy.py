@@ -218,7 +218,7 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
         logger.debug('initiating question retrieval')
     
         try:
-            tb_resp = requests.get('{}random.json'.format(api_endpoint))
+            api_resp = requests.get('{}random.json'.format(api_endpoint))
         except RequestException:
             return "Could not retrieve a question from the jservice API"
     
