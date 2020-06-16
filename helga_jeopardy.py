@@ -697,7 +697,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
                     }
                 })
 
-                if check_remaining_clues(client, channel) is False:
+                if not check_remaining_clues(client, channel):
                     return
 
                 reactor.callLater(1, show_board, client, channel)
