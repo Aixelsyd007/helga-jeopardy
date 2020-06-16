@@ -39,7 +39,7 @@ game_correct_responses_maintain = [
     '{}, correct! You are still in control of the board.',
     '{} takes it, and maintains control of the board.',
     'That\'s right, {}. You still have control, pick again.',
-    '{}, Yes. Select again',
+    '{}, yes. Select again.',
 ]
 
 game_correct_responses_take = [
