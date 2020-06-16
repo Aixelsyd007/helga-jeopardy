@@ -46,7 +46,7 @@ game_correct_responses_take = [
     'Well done, {}. You now have control of the board.',
     '{}, correct! You have taken control of the board.',
     '{} takes it, and takes control of the board.',
-    'That\'s it! {} now has constrol of the board.',
+    'That\'s it! {} now has control of the board.',
     'You got it! You\'ve gained contorl of the board, {}.',
 ]
 
