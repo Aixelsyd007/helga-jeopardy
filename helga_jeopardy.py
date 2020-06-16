@@ -150,7 +150,7 @@ def eval_potential_answer(input_line, answer):
 
     return correct, partial, ratio
 
-def reveal_answer(client, channel, question_id, answer, random=True, mongo_db=db.jeopardy):
+def reveal_answer(client, channel, question_id, answer, mongo_db=db.jeopardy, random=True):
     """
     This is the timer, essentially. When this point is reached, no more
     answers will be accepted, and our gracious host will reveal the
