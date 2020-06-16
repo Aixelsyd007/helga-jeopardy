@@ -406,16 +406,6 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
             game[category_name][clue_name] = game_question
             set_value += 200
 
-    default_value = 700
-
-    for key, value in game.items():
-        if key.startswith('cat'):
-            for k, v in value.items():
-                if k.startswith('clue'):
-                    if v['value'] is None:
-                        v['value'] = default_value
-                        default_value += 200
-
     game_id = db.jeopardy.insert(game)
     client.msg(channel, "New game created. to join: !j game join")
     return
@@ -607,11 +597,12 @@ def jeopardy(client, channel, nick, message, cmd, args,
                 return
             else:
                 client.msg(channel, "Only the game host, {}, can end the game. As a failsafe, this game will end 30 minutes after start.".format(current_game['game_host']))
-        if new_game:
+        if new_game and not current_game:
             if nick == new_game['game_host']:
+                client.msg(channel, "Host is ending game...")
                 end_game(client, channel)
                 return
-        else:
+            else:
                 client.msg(channel, "Only the game host, {}, can end the game. As a failsafe, this game will end 30 minutes after start.".format(current_game['game_host']))
         return
 
