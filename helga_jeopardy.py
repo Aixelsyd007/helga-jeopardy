@@ -171,7 +171,7 @@ def reveal_answer(client, channel, question_id, answer, mongo_db=db.jeopardy, ra
         logger.debug('not active question, someone must have answered it! Good Show!')
         return
 
-    if random is True:
+    if random:
         client.msg(channel, u'the correct answer is: {}'.format(answer))
         mongo_db.update({
             '_id': question_id,
