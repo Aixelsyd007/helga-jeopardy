@@ -249,6 +249,7 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
 
     else:
         logger.debug('initiating question retrieval')
+        q_active = 'not_found'
         for key, value in current_game.items():
             if key == sel_category:
                 for k, v in value.items():
@@ -261,6 +262,10 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
         category = current_game[sel_category]['category']
         if q_active is False:
             client.msg(channel, "Clue has already been played. Choose another clue")
+            return
+        
+        if q_active == 'not_found':
+            client.msg(channel, "Clue not found, select again.")
             return
 
         question_text = str(question).strip('[]\'')
@@ -356,7 +361,7 @@ def scores(client, channel, nick, alltime=False):
 
         rank += 1
 
-def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopardy):
+def fetch_categories():
     random_cat = random.randint(1,18412)
     cats_resp = requests.get('{}categories?count=6&offset={}'.format(api_endpoint, random_cat))
     y=0
@@ -364,6 +369,18 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
     for x in ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"]:
         cat_dict[x] = requests.get('{}category?id={}'.format(api_endpoint,cats_resp.json()[y]["id"]))
         y += 1
+    return cat_dict
+
+def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopardy):
+    cat_dict = fetch_categories()
+    print cat_dict
+
+    for key, value in cat_dict.items():
+        category = cat_dict[key].json()
+        if len(category['clues']) < 5 or any(['question' not in q or not q['question'] for q in category['clues']]):
+            client.msg(channel, "Category response was malformed, requesting again.")
+            cat_dict = reactor.callLater(1, setup_new_game, client, channel, nick, message, cmd, args)
+            return
 
     game = {
     'channel': channel,
@@ -375,24 +392,29 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
         category_name = 'cat{}'.format(category_num)
         category = cat_dict[category_name].json()
         game[category_name] = {'category': category['title']}
+        set_value = 200
         for i in range(5):
             clue_name = 'clue{}'.format(i + 1)
             question = category['clues'][i]
             game_question = {
                 'question': question['question'],
                 'answer': question['answer'],
-                'value': question['value'],
+                'value': set_value,
                 'id': question['id'],
                 'active': True,
             }
             game[category_name][clue_name] = game_question
+            set_value += 200
+
+    default_value = 700
 
     for key, value in game.items():
         if key.startswith('cat'):
             for k, v in value.items():
                 if k.startswith('clue'):
                     if v['value'] is None:
-                        v['value'] = 500
+                        v['value'] = default_value
+                        default_value += 200
 
     game_id = db.jeopardy.insert(game)
     client.msg(channel, "New game created. to join: !j game join")
@@ -444,7 +466,7 @@ def show_board(client, channel, mongo_db=db.jeopardy):
         if key.startswith('cat'):
             values = [str(value['clue{}'.format(i)]['value']) for i in range(1, 6) if value['clue{}'.format(i)]['active']]
             cat_names = value["category"]
-            score_response =' '.join([key,  cat_names, ' '.join(values)])
+            score_response =' '.join([key,  cat_names, ' '.join(sorted(values, key=int))])
             client.msg(channel, score_response)
 
     players = current_game['players']
@@ -544,11 +566,6 @@ def jeopardy(client, channel, nick, message, cmd, args,
         reset_channel(channel, mongo_db)
         return 'done'
 
-    if len(args) > 0 and args[0] == 'game':
-        if args[1] == 'new':
-            client.msg(channel, "Fetching questions and categories from the API. This will take ~10s")
-            reactor.callLater(1,setup_new_game, client, channel, nick, message, cmd, args)
-            return
 
     # if we have an active question, and args, evaluate the answer
 
@@ -569,6 +586,16 @@ def jeopardy(client, channel, nick, message, cmd, args,
         'game_started': True,
     })   
 
+    if len(args) > 0 and args[0] == 'game':
+        if args[1] == 'new':
+            if new_game or current_game:
+                client.msg(channel, "Game already created or in progress, the host can end the current game with: !j game end")
+                return
+            else:
+                client.msg(channel, "Fetching questions and categories from the API. This will take ~10s")
+                reactor.callLater(1,setup_new_game, client, channel, nick, message, cmd, args)
+            return
+
     if len(args) == 2 and args[0] == 'game' and args[1] == 'end':
         if not new_game and not current_game:
             client.msg(channel, "No active game, try: !j game new")
@@ -585,7 +612,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
                 end_game(client, channel)
                 return
         else:
-                client.msg(channel, "Only the game host, {}, can end the game. As a failsafe, this game will end 30 minutes after start.".format(new_game['game_host']))
+                client.msg(channel, "Only the game host, {}, can end the game. As a failsafe, this game will end 30 minutes after start.".format(current_game['game_host']))
         return
 
     if len(args) == 2 and args[0] == 'game' and args[1] == 'join':
@@ -741,7 +768,10 @@ def jeopardy(client, channel, nick, message, cmd, args,
             logger.debug('no active question :/')
             return
 
-    if len(args) == 2 and args[0].startswith('cat'):
+    if args[0].startswith('cat'):
+        if len(args) != 2:
+            client.msg(channel, "You must provide a category and a value")
+            return
         if not current_game:
             client.msg(channel, "Game not started.  to join: !j game join   to start: !j game start")
             return
@@ -753,10 +783,18 @@ def jeopardy(client, channel, nick, message, cmd, args,
             
 
         sel_category = args[0]
-        sel_value = int(args[1])
+        try:
+            sel_value = int(args[1])
+        except ValueError:
+            client.msg(channel, "Value must be a number")
+            return
+        if args[0] not in ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"]:
+            client.msg(channel, "Invalid category, select again.")
+            return
         if current_game:
             question_text = evaluate_control(client, channel, nick, current_game, sel_category, sel_value)
-
+            if not question_text:
+                return
     if not current_game:
         question_text = quest_func(client, channel)
 
