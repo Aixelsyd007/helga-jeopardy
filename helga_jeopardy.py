@@ -428,7 +428,7 @@ def start_new_game(nick, new_game, client, channel, mongo_db=db.jeopardy):
     client.msg(channel, 'Game started with the following players: {}'.format(', '.join(sorted(current_players))))
     client.msg(channel, "Here are today's categories:")
     show_board(client, channel, mongo_db=db.jeopardy)
-    control = random.choice(current_players)
+    control = random.choice(new_game['players'])
     client.msg(channel, "By random choice, {} has control of the board".format(control))
     client.msg(channel, "To select a question, use the following format: !j cat3 200")
     mongo_db.update({
