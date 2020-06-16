@@ -21,7 +21,7 @@ logger = log.getLogger(__name__)
 
 DEBUG = getattr(settings, 'HELGA_DEBUG', False)
 ANSWER_DELAY = getattr(settings, 'JEOPARDY_ANSWER_DELAY', 30)
-GAME_ANSWER_DELAY = getattr(settings, 'JEOPARDY_MATCH_ANSWER_DELAY', 7)
+GAME_ANSWER_DELAY = getattr(settings, 'JEOPARDY_MATCH_ANSWER_DELAY', 12)
 CHANNEL_ANNOUNCEMENT = getattr(settings, 'JEOPARDY_JOIN_MESSAGE', '')
 
 URL_RE = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
