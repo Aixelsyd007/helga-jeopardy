@@ -731,8 +731,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
 
         # wrong answer, ignore for random q, but deduct if game
 
-        else:
-            if current_game:
+        elif current_game:
                 if nick not in current_game['players']:
                     client.msg(channel, "You did not join this game. Please wait for the next game to join")
                     return
