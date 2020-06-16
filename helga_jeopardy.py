@@ -47,7 +47,7 @@ game_correct_responses_take = [
     '{}, correct! You have taken control of the board.',
     '{} takes it, and takes control of the board.',
     'That\'s it! {} now has control of the board.',
-    'You got it! You\'ve gained contorl of the board, {}.',
+    'You got it! You\'ve gained control of the board, {}.',
 ]
 
 def reset_channel(channel, mongo_db=db.jeopardy):
