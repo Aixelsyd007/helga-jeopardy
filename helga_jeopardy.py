@@ -411,15 +411,11 @@ def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopar
     return
 
 def start_new_game(nick, new_game, client, channel, mongo_db=db.jeopardy):
-    current_players = []
-    for i in new_game["players"]:
-        current_players.append(i)
-
-    if nick not in current_players:
-        client.msg(channel, "you have not joined the game lobby. try: !j game join")
+    if nick not in new_game['players']:
+        client.msg(channel, 'You have not joined the game lobby. Try: !j game join')
         return
 
-    for player in current_players:
+    for player in new_game['players']:
         mongo_db.update({
             'game_active': True,
             'game_started': False,
