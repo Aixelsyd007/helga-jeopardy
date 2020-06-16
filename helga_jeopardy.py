@@ -219,7 +219,8 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
     
         try:
             api_resp = requests.get('{}random.json'.format(api_endpoint))
-        except RequestException:
+        except RequestException as e:
+            logger.warn("Error fetching question from jservice API: %d %s", e.response.status_code, e.response.reason)
             return "Could not retrieve a question from the jservice API"
     
         json_resp = tb_resp.json()[0]
