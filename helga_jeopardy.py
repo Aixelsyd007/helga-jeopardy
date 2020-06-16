@@ -764,7 +764,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
             client.msg(channel, "You must provide a category and a value")
             return
         if not current_game:
-            client.msg(channel, "Game not started.  to join: !j game join   to start: !j game start")
+            client.msg(channel, 'Game not started. To join: !j game join; to start: !j game start')
             return
 
         if nick not in current_game['players']:
