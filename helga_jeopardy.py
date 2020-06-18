@@ -50,6 +50,11 @@ game_correct_responses_take = [
     'You got it! You\'ve gained control of the board, {}.',
 ]
 
+not_joined = [
+    'Game in progress. You must wait for the next game to join',
+    'You did not join this game. Please wait for the next game to join',
+]
+
 def reset_channel(channel, mongo_db=db.jeopardy):
     """
     For channel name, make sure no question is active.
@@ -668,8 +673,9 @@ def jeopardy(client, channel, nick, message, cmd, args,
 
             if current_game:
                 if nick not in current_game['players']:
-                    client.msg(channel, "You did not join this game. Please wait for the next game to join")
+                    client.msg(channel, random.choice(not_found))
                     return
+
                 sel_category = str(question['category'])
                 clue_idx = str(question['clue_idx'])
                 mongo_db.update({
@@ -729,20 +735,20 @@ def jeopardy(client, channel, nick, message, cmd, args,
         # wrong answer, ignore for random q, but deduct if game
 
         elif current_game:
-                if nick not in current_game['players']:
-                    client.msg(channel, "You did not join this game. Please wait for the next game to join")
-                    return
-                score = current_game[nick]
-                new_score = score - question['value']
-                mongo_db.update({
-                    'game_active': True,
-                    'channel': channel,
-                }, {
-                    '$set': {
-                        nick: new_score,
-                    }
-                })
+            if nick not in current_game['players']:
+                client.msg(channel, random.choice(not_found))
                 return
+            score = current_game[nick]
+            new_score = score - question['value']
+            mongo_db.update({
+                'game_active': True,
+                'channel': channel,
+            }, {
+                '$set': {
+                    nick: new_score,
+                }
+            })
+            return
             
         return
 
@@ -764,10 +770,8 @@ def jeopardy(client, channel, nick, message, cmd, args,
             return
 
         if nick not in current_game['players']:
-            client.msg(channel, "Game in progress. You must wait for the next game to join")
+            client.msg(channel, random.choice(not_joined))
             return
-
-            
 
         sel_category = args[0]
         try:
