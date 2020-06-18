@@ -24,6 +24,13 @@ ANSWER_DELAY = getattr(settings, 'JEOPARDY_ANSWER_DELAY', 30)
 GAME_ANSWER_DELAY = getattr(settings, 'JEOPARDY_MATCH_ANSWER_DELAY', 15)
 CHANNEL_ANNOUNCEMENT = getattr(settings, 'JEOPARDY_JOIN_MESSAGE', '')
 
+# Set the number of categories and questions that are retrieved and included in the game.
+# Total categories was determined by trial and error curl'ing /api/categories?count=1&offset=x
+QUESTION_COUNT = getattr(settings, 'QUESTION_COUNT', 5)
+CATEGORY_COUNT = getattr(settings, 'CATEGORY_COUNT', 6)
+TOTAL_CATEGORIES = getattr(settings, 'TOTAL_CATEGORIES', 18418)
+HIGHEST_OFFSET = TOTAL_CATEGORIES - CATEGORY_COUNT
+
 URL_RE = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
 api_endpoint = 'http://jservice.io/api/'
@@ -228,7 +235,7 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
             logger.warn("Error fetching question from jservice API: %d %s", e.response.status_code, e.response.reason)
             return "Could not retrieve a question from the jservice API"
     
-        json_resp = tb_resp.json()[0]
+        json_resp = api_resp.json()[0]
         question_text = json_resp['question']
         answer = json_resp['answer']
         category = json_resp['category']['title']
@@ -368,7 +375,7 @@ def scores(client, channel, nick, alltime=False):
         rank += 1
 
 def fetch_categories():
-    random_cat = random.randint(1,18412)
+    random_cat = random.randint(1, HIGHEST_OFFSET)
     cats_resp = requests.get('{}categories?count=6&offset={}'.format(api_endpoint, random_cat))
     y=0
     cat_dict={}
@@ -379,7 +386,6 @@ def fetch_categories():
 
 def setup_new_game(client, channel, nick, message, cmd, args, mongo_db=db.jeopardy):
     cat_dict = fetch_categories()
-    print cat_dict
 
     for key, value in cat_dict.items():
         category = cat_dict[key].json()
