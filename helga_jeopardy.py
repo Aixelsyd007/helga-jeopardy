@@ -269,8 +269,8 @@ def retrieve_question(client, channel, current_game=None, sel_category=None, sel
             client.msg(channel, "Clue not found, select again.")
             return
 
-        question_text = str(question).strip('[]\'')
-        answer = str(answer_raw).strip('[]\'')
+        question_text = str(question)
+        answer = str(answer_raw)
         if DEBUG:
             logger.debug(u'psst! the answer is: {}'.format(answer))
 
@@ -425,7 +425,7 @@ def start_new_game(nick, new_game, client, channel, mongo_db=db.jeopardy):
                 player: 0,
            }
         })
-    client.msg(channel, 'Game started with the following players: {}'.format(', '.join(sorted(current_players))))
+    client.msg(channel, 'Game started with the following players: {}'.format(', '.join(sorted(new_game['players']))))
     client.msg(channel, "Here are today's categories:")
     show_board(client, channel, mongo_db=db.jeopardy)
     control = random.choice(new_game['players'])
@@ -670,8 +670,8 @@ def jeopardy(client, channel, nick, message, cmd, args,
                 if nick not in current_game['players']:
                     client.msg(channel, "You did not join this game. Please wait for the next game to join")
                     return
-                sel_category = str(question['category']).strip('[]\'')
-                clue_idx = str(question['clue_idx']).strip('[]\'')
+                sel_category = str(question['category'])
+                clue_idx = str(question['clue_idx'])
                 mongo_db.update({
                     'active': True,
                     'channel': channel,
@@ -755,7 +755,7 @@ def jeopardy(client, channel, nick, message, cmd, args,
             logger.debug('no active question :/')
             return
 
-    if args[0].startswith('cat'):
+    if args and args[0].startswith('cat'):
         if len(args) != 2:
             client.msg(channel, "You must provide a category and a value")
             return
@@ -784,6 +784,11 @@ def jeopardy(client, channel, nick, message, cmd, args,
                 return
     if not current_game:
         question_text = quest_func(client, channel)
+
+    try:
+        question_text
+    except NameError:
+        return
 
     result, context_messages = clean_question(question_text)
     for m in context_messages:
