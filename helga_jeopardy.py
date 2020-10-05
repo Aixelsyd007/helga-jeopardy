@@ -494,7 +494,7 @@ def check_remaining_clues(client, channel, mongo_db=db.jeopardy):
                     question_count += 1
 
     if question_count < 1:
-        client.msg(channel, "All questions have been answered. Ending game..")
+        client.msg(channel, 'All questions have been answered. Ending game.')
         end_game(client, channel, current_game)
         return False
     else:
