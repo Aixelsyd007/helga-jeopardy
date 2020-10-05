@@ -487,12 +487,11 @@ def check_remaining_clues(client, channel, mongo_db=db.jeopardy):
         'game_started': True,
     })
     question_count = 0
-    for key, value in current_game.items():
-        if key.startswith('cat'):
-            for k, v in value.items():
-                if k.startswith('clue'):
-                    if v['active'] == True:
-                        question_count += 1
+    for category_id, category in current_game.items():
+        if category_id.startswith('cat'):
+            for clue_id, clue in category.items():
+                if clue_id.startswith('clue') and clue['active']:
+                    question_count += 1
 
     if question_count < 1:
         client.msg(channel, "All questions have been answered. Ending game..")
